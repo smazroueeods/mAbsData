@@ -1,0 +1,18 @@
+{
+  "version": "0.2",
+  
+"dumper": {
+    "data_url": [
+      "https://github.com/smazroueeods/mAbsData",
+    ],
+    "uncompress": false,
+    "schedule": "0 0 * * *"
+  },
+  
+"uploaders":
+    {
+      "parser": "mAb_parser",
+      "on_duplicates": "error",
+    },
+    
+}
