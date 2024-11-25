@@ -23,7 +23,7 @@ def read_csv(file: str, delim: str):
 
 def load_data(data_folder: str):
     # Read files for mAbs KG
-    mab_info = read_csv(os.path.join(data_folder, "mabs-virus-mapping.tsv"), "\t")
+    mab_info = read_csv(os.path.join(data_folder, "NCATS_MonoClonalAntibodies.csv"), ",")
 
     docs: dict[str, any] = {}
 
@@ -41,17 +41,20 @@ def load_data(data_folder: str):
             docs[doc_id] = {
                 '_id': doc_id,
                 'subject': {
-                    'MAB_NAME': row['MAB_NAME'],
-                    'MAB_ID': row['MAB_ID'],
+                    "type": "Antibody",
+                    "name": row['MAB_NAME'],
+                    'id': row['MAB_ID'],
                 },
                 'object': {
-                    'VIRUS_ID': int(row['VIRUS_ID']),
-                    'VIRUS_NAME': row['VIRUS_NAME'],
+                    "type": "Virus",
+                    'id': int(row['VIRUS_ID']),
+                    'name': row['VIRUS_NAME'],
                 },
-                'relation': [{
-                    'VIRUS_ID': int(row['VIRUS_ID']),
-                    'VIRUS_NAME': row['VIRUS_NAME'],
-                }],
+                # 'relation': [{
+                #     'VIRUS_ID': int(row['VIRUS_ID']),
+                #     'VIRUS_NAME': row['VIRUS_NAME'],
+                # }],
+                "pubmed": <pubmed_id>,
                 'predicate': 'targets'
             }
 
