@@ -1,18 +1,18 @@
 {
   "version": "0.2",
-  
-"dumper": {
+  "__metadata__": {
+    "url": "https://github.com/smazroueeods/mAbsData",
+    "description": ""
+  },
+  "dumper": {
     "data_url": [
-      "https://github.com/smazroueeods/mAbsData",
+      "https://raw.githubusercontent.com/smazroueeods/mAbsData/refs/heads/main/NCATS_MonoClonalAntibodies.csv"
     ],
     "uncompress": false,
-    "schedule": "0 0 * * *"
+    "release": "version:get_release"
   },
-  
-"uploaders":
-    {
-      "parser": "mAb_parser",
-      "on_duplicates": "error",
-    },
-    
+  "uploaders": {
+    "parser": "mAb_parser:load_data",
+    "on_duplicates": "error"
+  }
 }
