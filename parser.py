@@ -13,9 +13,9 @@ def read_csv(file: str, delim: str):
             if len(row) == 0:  # Skip empty rows
                 continue
             if i == 0:  # First row is the header
-                categories = [col.strip().lower() for col in row]  # Normalize header to lowercase
+                categories = [col.strip().lower() for col in row]  
             else:  # Process data rows
-                if len(row) != len(categories):  # Check for row-column mismatch
+                if len(row) != len(categories):  
                     print(f"Row length mismatch, skipping: {row}")
                     continue
                 info.append({categories[j]: row[j].strip() for j in range(len(row))})
@@ -38,7 +38,7 @@ def load_data(data_folder: str):
             continue
 
         try:
-            virus_id = int(row['virus_id'])  # Validate integer field
+            virus_id = int(row['virus_id'])  
         except ValueError:
             print(f"Invalid vitus_id value in row: {row}")
             continue
@@ -71,15 +71,13 @@ def load_data(data_folder: str):
                 'predicate': 'targets'
             }
 
-    # Yield documents
     for doc in docs.values():
         yield doc
 
 
-# Testing function
 def test():
     obj = {'data': []}
-    for doc in load_data("./"):  # Assuming the current directory contains "NNN.csv"
+    for doc in load_data("./"):  
         obj['data'].append(doc)
 
     with open("./output_mabs.json", "w") as f:
