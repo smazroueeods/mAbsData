@@ -65,8 +65,8 @@ def load_data(data_folder: str):
                     'name': row['virus_name'],
                 },
                 'relation': [{
-                    'VIRUS_ID': virus_id,
-                    'VIRUS_NAME': row['virus_name'],
+                    'virus_id': virus_id,
+                    'virus_name': row['virus_name'],
                 }],
                 'predicate': 'targets'
             }
