@@ -11,10 +11,8 @@
     "uncompress": false,
     "release": "version:get_release"
   },
-  "uploaders": {
-    "parser": "mAb_parser:load_data",
-    "uploader": {
-      "parser": "parser:load_data",
+  "uploader": {
+    "parser": "parser:load_data",
     "on_duplicates": "error"
   }
 }
