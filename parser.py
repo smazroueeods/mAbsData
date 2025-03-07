@@ -1,12 +1,13 @@
+from typing import Any, Generator
+import collections
 import csv
 import itertools
 import json
 import logging
 import pathlib
-from typing import Generator
+import re
 import urllib
 import urllib.request
-import uuid
 
 
 logger = logging.getLogger("mabs")
@@ -42,6 +43,65 @@ def _normalize_row(row: dict) -> bool:
     return valid_row
 
 
+def _filter_document(entry: Any, *forbidden: list) -> Any:
+    """
+    Filters the document for any forbidden entries provided.
+
+    Used within the plugin to remove falsy values like None or ''
+    """
+    if isinstance(entry, list):
+        return [
+            _filter_document(inner_entry, *forbidden)
+            for inner_entry in entry
+            if inner_entry not in forbidden
+        ]
+    elif isinstance(entry, dict):
+        result = {}
+        for key, value in entry.items():
+            value = _filter_document(value, *forbidden)
+            if key not in forbidden and value not in forbidden:
+                result[key] = value
+        return result
+    return entry
+
+
+def _parse_cross_reference(raw_cross_reference_value: str) -> collections.defaultdict:
+    """
+    Parser for the cross reference values
+
+    Example entries for structure:
+    [0] PDB: 2R69
+    [1] PDB: 6WEQ, PDB: 7K93
+    [2] PDB: 2I69 and 1SVB
+    [3] PDB: 5JHM, 5JHL
+
+    Split on [",", "and"]
+    [0] ["PDB: 2R69"]
+    [1] ["PDB: 6WEQ", "PDB: 7K93"]
+    [2] ["PDB: 2I69", "1SVB"]
+    [3] ["PDB: 5JHM", "5JHL"]
+    """
+    cross_reference = collections.defaultdict(list)
+    if raw_cross_reference_value is not None and raw_cross_reference_value != "":
+        creference = raw_cross_reference_value.strip()
+        creference_chunks = re.split(r",|and", creference)
+
+        prior_chunk_header = None
+        for chunk in creference_chunks:
+            cr_split_chunk = chunk.split(":")
+
+            if len(cr_split_chunk) == 1:
+                cr_value = cr_split_chunk[0].strip()
+                cross_reference[prior_chunk_header].append(cr_value)
+
+            elif len(cr_split_chunk) == 2:
+                cr_header = cr_split_chunk[0].strip()
+                cr_value = cr_split_chunk[1].strip()
+                cross_reference[cr_header].append(cr_value)
+                prior_chunk_header = cr_header
+    return cross_reference
+
+
 def _read_csv(file: str, delim: str) -> Generator[dict, str, None]:
     """
     Generator for the csv data file to produce
@@ -61,7 +121,7 @@ def _read_csv(file: str, delim: str) -> Generator[dict, str, None]:
                     yield row
 
 
-def _create_anitbody_virus_document(row: dict) -> dict:
+def _create_antibody_virus_document(row: dict) -> dict:
     """
     Generates the document detailing the subject-relation-object
     structure between the antibody and virus
@@ -77,47 +137,54 @@ def _create_anitbody_virus_document(row: dict) -> dict:
         > Envelope protein E, Fusion loop domain (98-DRXW-101)
         > Envelope protein E, EDIII domain, This antibody neutralizes dengue virus serotypes 1, 2 and 3.
     """
-
-    cross_reference = {}
-    if row.get("cross_reference", None) is not None:
-        cr_name, cr_value = row["cross_reference"]
-        cr_name = cr_name.strip('"')
-        cr_value = cr_value.split("and")
+    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
 
     epitope = {"protein": None, "domain": None, "description": None}
-    if row.get("epitope", None) is not None:
-        epitope_contents = row["epitope"].split(",")
+    if row.get("Epitope", None) is not None:
+        epitope_contents = row["Epitope"].split(",")
+
+        if len(epitope_contents) > 3:
+            description_overflow = []
+            while len(epitope_contents) > 2:
+                description_overflow.append(epitope_contents.pop(-1))
+            description_overflow.reverse()
+            epitope_contents.append("".join(description_overflow))
+
         for epitope_value, key_value in itertools.zip_longest(
             epitope_contents, epitope.keys(), fillvalue=None
         ):
-            epitope[key_value] = epitope_value
+            if epitope_value is not None:
+                epitope[key_value] = epitope_value
 
-    virus_id = (int(row["virus_id"]),)
+    pubmed_collection = []
+    if row["pubmed_id"] is not None:
+        pubmed_collection = [
+            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
+        ]
+
     document = {
-        "_id": f"{uuid.uuid4()}-{row['mab_name']}-{virus_id}",
+        "_id": f"{row['mab_name']}-{row['virus_id']}",
         "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
-        "relation": {"epitope": epitope, "pubmed": row["pubmed_id"]},
+        "relation": {"epitope": epitope, "pubmed": pubmed_collection},
         "object": {
-            "id": int(row["virus_id"]),
+            "id": row["virus_id"],
             "name": row["virus_name"],
+            "type": "Virus",
             "family": row["Family"],
             "species": row["Species"],
         },
-        "predicate": "targets",
     }
+
+    document = _filter_document(document, *["", None, {}])
     return document
 
 
-def _create_anitbody_protein_document(row: dict) -> Generator[dict, str, None]:
+def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
     """
     Generates the document detailing the subject-relation-object
     structure between the antibody and protein
     """
-    cross_reference = {}
-    if row.get("cross_reference") is not None:
-        cr_name, cr_value = row["cross_reference"]
-        cr_name = cr_name.strip('"')
-        cr_value = cr_value.split("and")
+    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
 
     target_protein = []
     if row.get("Target Protein") is not None:
@@ -127,39 +194,56 @@ def _create_anitbody_protein_document(row: dict) -> Generator[dict, str, None]:
     if row.get("Target") is not None:
         targets = row["Target"].split(",")
 
+    pubmed_collection = []
+    if row["pubmed_id"] is not None:
+        pubmed_collection = [
+            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
+        ]
+
     for target in targets:
-        document = {
-            "_id": f"{uuid.uuid4()}-{row['mab_name']}-{target}",
-            "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
-            "relation": {"pubmed": row["pubmed_id"]},
-            "object": {"id": target, "name": target_protein},
-            "predicate": "placeholder",
-        }
-        yield document
+        if "UniProt" in target:
+            protein_target = target.split(":")
+            protein_object_id = f"UniProtKB:{protein_target[1].split()[0]}"
+
+            document = {
+                "_id": f"{row['mab_name']}-{target}",
+                "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
+                "relation": {"pubmed": pubmed_collection},
+                "object": {"id": protein_object_id, "type": "Protein"},
+            }
+            document = _filter_document(document, *["", None, {}])
+            yield document
 
 
-def _create_anitbody_disease_document(row: dict) -> dict:
+def _create_antibody_disease_document(row: dict) -> dict:
     """
     Generates the document detailing the subject-relation-object
     structure between the antibody and disease
     """
-    cross_reference = {}
-    if row.get("cross_reference") is not None:
-        cr_name, cr_value = row["cross_reference"]
-        cr_name = cr_name.strip('"')
-        cr_value = cr_value.split("and")
+    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
 
     disease_name = row["disease_name"]
     discovered_disease_name = _disease_name_lookup(disease_name)
 
-    document = {
-        "_id": f"{uuid.uuid4()}-{row['mab_name']}-{row['disease_id']}",
-        "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
-        "relation": {"pubmed": row["pubmed_id"]},
-        "object": {"id": row["disease_id"], "name": discovered_disease_name},
-        "predicate": "treats",
-    }
-    return document
+    pubmed_collection = []
+    if row["pubmed_id"] is not None:
+        pubmed_collection = [
+            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
+        ]
+
+    if row["disease_id"] not in {"X-TBD", "Y-TBD", "Z-TBD"}:
+        document = {
+            "_id": f"{row['mab_name']}-{row['disease_id']}",
+            "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
+            "relation": {"pubmed": pubmed_collection},
+            "object": {
+                "id": row["disease_id"],
+                "name": discovered_disease_name,
+                "type": "Disease",
+            },
+        }
+        document = _filter_document(document, *["", None, {}])
+        return document
 
 
 def _disease_name_lookup(disease_name: str) -> str:
@@ -194,10 +278,10 @@ def load_data(data_folder: str):
     data_folder = pathlib.Path(data_folder).resolve().absolute()
     antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies.csv")
     for row in _read_csv(str(antibodies_file), delim=","):
-        antibody_virus_document = _create_anitbody_virus_document(row)
+        antibody_virus_document = _create_antibody_virus_document(row)
         yield antibody_virus_document
 
-        antibody_disease_document = _create_anitbody_disease_document(row)
+        antibody_disease_document = _create_antibody_disease_document(row)
         yield antibody_disease_document
 
-        yield from _create_anitbody_protein_document(row)
+        yield from _create_antibody_protein_document(row)
