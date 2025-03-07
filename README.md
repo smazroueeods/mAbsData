@@ -8,7 +8,7 @@
 | :----- | :------------------- |
 | 0      | mab_uid              |
 | 1      | mab_name             |
-| 2      | cross_reference      |
+| 2      | Protein_RefID        |
 | 3      | virus_id             |
 | 4      | virus_name           |
 | 5      | Family               |
@@ -32,19 +32,24 @@
 
 ```
 ┌─────┐
+│     │
 │ mAb │
-└─┬─┬─┘
-  │ │
-  │ │
-  │ │
-  │ │ targets                ┌───────┐
-  │ └───────────────────────►│ virus │
-  │                          └───────┘
-  │                              ▲
-  │                              │
-  │ treats   ┌─────────┐  causes │
-  └─────────►│ disease ├─────────┘
-             └─────────┘
+│     │
+└┬─┬─┬┘           ┌─────────┐
+ │ │ │            │         │
+ │ │ └───────────►│  virus  │
+ │ │              │         │
+ │ │              └─────────┘
+ │ │              ┌─────────┐
+ │ │              │         │
+ │ └─────────────►│ protein │
+ │                │         │
+ │                └─────────┘
+ │                ┌─────────┐
+ │                │         │
+ └───────────────►│ disease │
+                  │         │
+                  └─────────┘
 ```
  
 
@@ -90,7 +95,7 @@
 }
 ```
 
-###### Antibody-Protein Relationship
+###### Antibody-Disease Relationship
 ```JSON
 {
     "subject": {
@@ -105,4 +110,63 @@
         "name": ""
     }
 }
+```
+
+
+### Document Examples
+
+```JSON
+[
+    { // antibody-virus
+        "subject": {
+            "name": "1A1D-2",  // from column mab_name
+            "cross_reference": {    // from column Protein_RefID
+                "PDB": ["2R69"]
+            }
+        },
+        "relation": {
+            "epitope": {    // from column Epitope
+                "protein": "Envelope protein E",
+                "domain": "EDIII domain",
+                "description": "This antibody neutralizes dengue virus serotypes 1, 2 and 3."
+            },
+            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
+        },
+        "object": {
+            "id": 11053,  // from column virus_id
+            "name": "DENV1",  // from column virus_name
+            "family": "Flavivirus",  // from column Family
+            "species": "DENV"  // from column Species
+        }
+    },
+    { // antibody-protein
+        "subject": {
+            "id": "1A1D-2",  // from column mab_name
+            "cross_reference": {    // from column Protein_RefID
+                "PDB": ["2R69"]
+            }
+        },
+        "relation": {
+            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
+        },
+        "object": {
+            "uniprot": "P29991"  // from column Target
+        }
+    },
+    { // antibody-disease
+        "subject": {
+            "id": "1A1D-2",  // from column mab_name
+            "cross_reference": {    // from column Protein_RefID
+                "PDB": ["2R69"]
+            }
+        },
+        "relation": {
+            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
+        },
+        "object": {
+            "id": "DOID:12205",     // from column disease_id
+            "name": "dengue disease"     // lookup using our tool
+        }
+    }
+]
 ```
