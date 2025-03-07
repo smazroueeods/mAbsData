@@ -14,9 +14,6 @@ logger = logging.getLogger("mabs")
 logger.setLevel("DEBUG")
 
 
-disease_lookup_table = {}
-
-
 def _normalize_row(row: dict) -> bool:
     """
     Normalize the rows to ensure that the expected
@@ -215,61 +212,6 @@ def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
             yield document
 
 
-def _create_antibody_disease_document(row: dict) -> dict:
-    """
-    Generates the document detailing the subject-relation-object
-    structure between the antibody and disease
-    """
-    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
-
-    disease_name = row["disease_name"]
-    discovered_disease_name = _disease_name_lookup(disease_name)
-
-    pubmed_collection = []
-    if row["pubmed_id"] is not None:
-        pubmed_collection = [
-            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
-        ]
-
-    if row["disease_id"] not in {"X-TBD", "Y-TBD", "Z-TBD"}:
-        document = {
-            "_id": f"{row['mab_name']}-{row['disease_id']}",
-            "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
-            "relation": {"pubmed": pubmed_collection},
-            "object": {
-                "id": row["disease_id"],
-                "name": discovered_disease_name,
-                "type": "Disease",
-            },
-        }
-        document = _filter_document(document, *["", None, {}])
-        return document
-
-
-def _disease_name_lookup(disease_name: str) -> str:
-    """
-    Perform a lookup on my disease for a corresponding disease name.
-
-    Regardless of result, we update the result to a lookup table as
-    in-memory cache to avoid unnecessary network calls
-    """
-    discovered_disease_name = disease_lookup_table.get(disease_name, None)
-    if discovered_disease_name is None:
-        try:
-            disease_url_lookup = f"https://mydisease.info/v1/disease/{disease_name}?fields=disgenet.xrefs.disease_name"
-            with urllib.request.urlopen(disease_url_lookup) as http_response:
-                response_content = http_response.read()
-                response_body = json.loads(response_content.decode("utf-8"))
-                discovered_disease_name = response_body["disgenet"]["xrefs"][
-                    "disease_name"
-                ]
-        except urllib.error.HTTPError:
-            discovered_disease_name = None
-        finally:
-            disease_lookup_table[disease_name] = discovered_disease_name
-    return discovered_disease_name
-
-
 def load_data(data_folder: str):
     """
     Load data and process JSON structure
@@ -280,8 +222,5 @@ def load_data(data_folder: str):
     for row in _read_csv(str(antibodies_file), delim=","):
         antibody_virus_document = _create_antibody_virus_document(row)
         yield antibody_virus_document
-
-        antibody_disease_document = _create_antibody_disease_document(row)
-        yield antibody_disease_document
 
         yield from _create_antibody_protein_document(row)

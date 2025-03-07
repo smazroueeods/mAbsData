@@ -95,23 +95,6 @@
 }
 ```
 
-###### Antibody-Disease Relationship
-```JSON
-{
-    "subject": {
-        "id": "",
-        "cross_reference": {}
-    },
-    "relation": {
-        "pubmed": ""
-    },
-    "object": {
-        "id": "",
-        "name": ""
-    }
-}
-```
-
 
 ### Document Examples
 
@@ -151,21 +134,6 @@
         },
         "object": {
             "uniprot": "P29991"  // from column Target
-        }
-    },
-    { // antibody-disease
-        "subject": {
-            "id": "1A1D-2",  // from column mab_name
-            "cross_reference": {    // from column Protein_RefID
-                "PDB": ["2R69"]
-            }
-        },
-        "relation": {
-            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
-        },
-        "object": {
-            "id": "DOID:12205",     // from column disease_id
-            "name": "dengue disease"     // lookup using our tool
         }
     }
 ]
