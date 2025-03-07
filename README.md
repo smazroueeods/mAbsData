@@ -56,27 +56,6 @@
 ### Document Structure
 
 
-###### Antibody-Virus Relationship
-```JSON
-
-{
-    "subject": {
-        "id": "",
-        "cross_reference": {}
-    },
-    "relation": {
-        "epitope": {},
-        "pubmed": ""
-    },
-    "object": {
-        "id": "",
-        "name": "",
-        "family": "",
-        "species": ""
-    }
-}
-```
-
 ###### Antibody-Protein Relationship
 
 ```JSON
@@ -100,28 +79,6 @@
 
 ```JSON
 [
-    { // antibody-virus
-        "subject": {
-            "name": "1A1D-2",  // from column mab_name
-            "cross_reference": {    // from column Protein_RefID
-                "PDB": ["2R69"]
-            }
-        },
-        "relation": {
-            "epitope": {    // from column Epitope
-                "protein": "Envelope protein E",
-                "domain": "EDIII domain",
-                "description": "This antibody neutralizes dengue virus serotypes 1, 2 and 3."
-            },
-            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
-        },
-        "object": {
-            "id": 11053,  // from column virus_id
-            "name": "DENV1",  // from column virus_name
-            "family": "Flavivirus",  // from column Family
-            "species": "DENV"  // from column Species
-        }
-    },
     { // antibody-protein
         "subject": {
             "id": "1A1D-2",  // from column mab_name

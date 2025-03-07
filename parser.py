@@ -118,64 +118,6 @@ def _read_csv(file: str, delim: str) -> Generator[dict, str, None]:
                     yield row
 
 
-def _create_antibody_virus_document(row: dict) -> dict:
-    """
-    Generates the document detailing the subject-relation-object
-    structure between the antibody and virus
-
-    cross_reference example values:
-        > Cellosaurus: CVCL_J890
-        > PDB: 2R69
-        > Addgene: 120363
-        > PDB: 2I69 and 1SVB
-
-    epitope example values:
-        > Envelope protein E
-        > Envelope protein E, Fusion loop domain (98-DRXW-101)
-        > Envelope protein E, EDIII domain, This antibody neutralizes dengue virus serotypes 1, 2 and 3.
-    """
-    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
-
-    epitope = {"protein": None, "domain": None, "description": None}
-    if row.get("Epitope", None) is not None:
-        epitope_contents = row["Epitope"].split(",")
-
-        if len(epitope_contents) > 3:
-            description_overflow = []
-            while len(epitope_contents) > 2:
-                description_overflow.append(epitope_contents.pop(-1))
-            description_overflow.reverse()
-            epitope_contents.append("".join(description_overflow))
-
-        for epitope_value, key_value in itertools.zip_longest(
-            epitope_contents, epitope.keys(), fillvalue=None
-        ):
-            if epitope_value is not None:
-                epitope[key_value] = epitope_value
-
-    pubmed_collection = []
-    if row["pubmed_id"] is not None:
-        pubmed_collection = [
-            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
-        ]
-
-    document = {
-        "_id": f"{row['mab_name']}-{row['virus_id']}",
-        "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
-        "relation": {"epitope": epitope, "pubmed": pubmed_collection},
-        "object": {
-            "id": row["virus_id"],
-            "name": row["virus_name"],
-            "type": "Virus",
-            "family": row["Family"],
-            "species": row["Species"],
-        },
-    }
-
-    document = _filter_document(document, *["", None, {}])
-    return document
-
-
 def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
     """
     Generates the document detailing the subject-relation-object
@@ -220,7 +162,4 @@ def load_data(data_folder: str):
     data_folder = pathlib.Path(data_folder).resolve().absolute()
     antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies.csv")
     for row in _read_csv(str(antibodies_file), delim=","):
-        antibody_virus_document = _create_antibody_virus_document(row)
-        yield antibody_virus_document
-
         yield from _create_antibody_protein_document(row)
