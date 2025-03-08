@@ -122,12 +122,11 @@ def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
     """
     Generates the document detailing the subject-relation-object
     structure between the antibody and protein
+
+    subject -> antibody
+    object -> protein
     """
     cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
-
-    target_protein = []
-    if row.get("Target Protein") is not None:
-        target_protein = row["Target Protein"].split(",")
 
     targets = []
     if row.get("Target") is not None:
@@ -145,10 +144,53 @@ def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
             protein_object_id = f"UniProtKB:{protein_target[1].split()[0]}"
 
             document = {
-                "_id": f"{row['mab_name']}-{target}",
-                "subject": {"id": row["mab_name"], "cross_reference": cross_reference},
+                "_id": f"{row['mab_name']}-{protein_object_id}",
+                "subject": {
+                    "id": row["mab_name"],
+                    "cross_reference": cross_reference,
+                    "type": "Antibody",
+                },
                 "relation": {"pubmed": pubmed_collection},
                 "object": {"id": protein_object_id, "type": "Protein"},
+            }
+            document = _filter_document(document, *["", None, {}])
+            yield document
+
+
+def _create_protein_virus_document(row: dict) -> Generator[dict, str, None]:
+    """
+    Generates the document detailing the subject-relation-object
+    structure between the protein and virus
+
+    subject -> protein
+    object -> virus
+    """
+    targets = []
+    if row.get("Target") is not None:
+        targets = row["Target"].split(",")
+
+    pubmed_collection = []
+    if row["pubmed_id"] is not None:
+        pubmed_collection = [
+            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
+        ]
+
+    for target in targets:
+        if "UniProt" in target:
+            protein_target = target.split(":")
+            protein_object_id = f"UniProtKB:{protein_target[1].split()[0]}"
+
+            document = {
+                "_id": f"{protein_object_id}-{row['virus_id']}",
+                "subject": {"id": protein_object_id, "type": "Protein"},
+                "relation": {"pubmed": pubmed_collection},
+                "object": {
+                    "id": row["virus_id"],
+                    "name": row["virus_name"],
+                    "family": row["Family"],
+                    "species": row["Species"],
+                    "type": "Virus",
+                },
             }
             document = _filter_document(document, *["", None, {}])
             yield document
@@ -163,3 +205,4 @@ def load_data(data_folder: str):
     antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies.csv")
     for row in _read_csv(str(antibodies_file), delim=","):
         yield from _create_antibody_protein_document(row)
+        yield from _create_protein_virus_document(row)

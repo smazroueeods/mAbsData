@@ -30,28 +30,8 @@
 
 ### Relationship Diagram
 
-```
-┌─────┐
-│     │
-│ mAb │
-│     │
-└┬─┬─┬┘           ┌─────────┐
- │ │ │            │         │
- │ │ └───────────►│  virus  │
- │ │              │         │
- │ │              └─────────┘
- │ │              ┌─────────┐
- │ │              │         │
- │ └─────────────►│ protein │
- │                │         │
- │                └─────────┘
- │                ┌─────────┐
- │                │         │
- └───────────────►│ disease │
-                  │         │
-                  └─────────┘
-```
- 
+`antibody -> protein -> virus`
+
 
 ### Document Structure
 
@@ -62,17 +42,43 @@
 {
     "subject": {
         "id": "",
+        "type": "",
         "cross_reference": {}
     },
     "relation": {
-        "pubmed": ""
+        "pubmed": []
     },
     "object": {
         "id": "",
-        "name": ""
+        "name": "",
+        "type": ""
     }
 }
 ```
+
+
+###### Protein-Virus Relationship
+
+```JSON
+{
+    "_id": "",
+    "subject": {
+        "id": "",
+        "type": "",
+    },
+    "relation": {
+        "pubmed": []
+    },
+    "object": {
+        "id": "",
+        "name": "",
+        "family": "",
+        "species": "",
+        "type": ""
+    }
+}
+```
+
 
 
 ### Document Examples
@@ -80,17 +86,45 @@
 ```JSON
 [
     { // antibody-protein
+        "_id": "FabZK2B10-UniProtKB:A0A024B7W1",
         "subject": {
-            "id": "1A1D-2",  // from column mab_name
-            "cross_reference": {    // from column Protein_RefID
-                "PDB": ["2R69"]
-            }
+            "id": "FabZK2B10",
+            "cross_reference": {
+                "PDB": [
+                    "6JEP"
+                ]
+            },
+            "type": "Antibody"
         },
         "relation": {
-            "pubmed": ["18264114", "9657950"]  // from column pubmed_id
+            "pubmed": [
+                "29719255",
+                "30893607"
+            ]
         },
         "object": {
-            "uniprot": "P29991"  // from column Target
+            "id": "UniProtKB:A0A024B7W1",
+            "type": "Protein"
+        }
+    },
+    { // protein-virus
+        "_id": "UniProtKB:Q6RVA2-11069",
+        "subject": {
+            "id": "UniProtKB:Q6RVA2",
+            "type": "Protein"
+        },
+        "relation": {
+            "pubmed": [
+                "27158114",
+                "21264311"
+            ]
+        },
+        "object": {
+            "id": "11069",
+            "name": "DENV3",
+            "family": "Flavivirus",
+            "species": "DENV",
+            "type": "Virus"
         }
     }
 ]
