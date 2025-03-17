@@ -42,8 +42,8 @@
 {
     "subject": {
         "id": "",
-        "type": "",
         "cross_reference": {}
+        "type": "",
     },
     "relation": {
         "pubmed": []
@@ -74,6 +74,27 @@
         "name": "",
         "family": "",
         "species": "",
+        "type": ""
+    }
+}
+```
+
+###### Antibody-Disease Relationship
+
+```JSON
+{
+    "_id": "",
+    "subject": {
+        "id": "",
+        "cross_reference": {}
+        "type": "",
+    },
+    "relation": {
+        "pubmed": []
+    },
+    "object": {
+        "id": "",
+        "name": "",
         "type": ""
     }
 }
@@ -125,6 +146,23 @@
             "family": "Flavivirus",
             "species": "DENV",
             "type": "Virus"
+        }
+    },
+    { // antibody-disease
+        "subject": {
+            "id": "1A1D-2",
+            "cross_reference": {
+                "PDB": ["2R69"]
+            },
+            "type": "Antibody"
+        },
+        "relation": {
+            "pubmed": ["18264114", "9657950"]
+        },
+        "object": {
+            "id": "DOID:12205",
+            "name": "dengue disease",
+            "type": "Disease"
         }
     }
 ]
