@@ -1,1 +1,1 @@
-
+Organism: Dengue virus (ID:12637), dengue virus type 1 (dengue type 1 D1 virus) (ID:11053, Dengue virus 1), dengue virus type 2 (Dengue Virus serotype 2) (ID:11060, Dengue virus 2), dengue virus type 3 (Dengue virus serotype 3) (ID:11069, dengue 3 virus), dengue virus type 4 (dengue type 4 virus DEN4) (ID:11070, Dengue virus 4), Zika virus (ID:64320), Japanese encephalitis virus (Japanese encephalitis (JE) virus) (ID:11072, Japanese encephalitis virus JE), West Nile virus (ID:11082), Yellow fever virus (Flavivirus febricis) (ID:11089, yellow fever virus YFV)
