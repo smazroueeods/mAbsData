@@ -1,0 +1,10 @@
+virus_id	virus_name	disease	doid	symptoms
+11053	DENV1	Dengue fever	12205	"Fever, Headache, Pain behind the eyes, Joint pain, Muscle pain, Rash, Nausea, Vomiting, Fatigue"
+11060	DENV2	"Dengue fever, Dengue hemorrhagic fever"	"12205, 12206"	"Fever, Headache, Pain behind the eyes, Joint pain, Muscle pain, Rash, Nausea, Vomiting, Fatigue"
+11069	DENV3	"Dengue Fever, Dengue Fever with Thrombocytopenia "	"12205, 12206"	"Fever, Headache, Pain behind the eyes, Joint pain, Muscle pain, Rash, Nausea, Vomiting, Fatigue"
+11070	DENV4	"Dengue Hemorrhagic Fever , Dengue Shock Syndrome"	"12206, 0050125"	"Fever, Headache, Pain behind the eyes, Joint pain, Muscle pain, Rash, Nausea, Vomiting, Fatigue"
+64320	ZIKV	"Zika Fever, Congenital Zika Syndrome, Guillain-Barr Syndrome"	"0060478, 0080180"	"Fever, Rash, Joint pain, Muscle pain, Conjunctivitis (red eyes), Headache, Fatigue, Swollen lymph nodes"
+11089	YFV	"Yellow Fever, Yellow Fever Hemorrhagic Fever"	"9682, 0050194"	"Fever, Chills, Headache, Muscle pain, Back pain, Joint pain, Fatigue, Loss of appetite, Nausea, Vomiting, Diarrhea"
+11082	WNV	"West Nile Fever, West Nile encephalitis"	"2366, 2365"	"Fever, Headache, Body aches, Joint pain, Swollen lymph nodes, Rash, Fatigue, Muscle weakness, Numbness or tingling in the extremities, Confusion"
+11080	SLEV	St. Louis Encephalitis fever	10845	"Fever, Headache, Vomiting, Muscle weakness, Fatigue, Confusion, Seizures, Coma, Numbness or tingling in the extremities, Difficulty speaking or swallowing"
+11072	JEV	Japanese Encephalitis	10844	"High fever, Headache, Vomiting, Seizures, Confusion, Coma, Paralysis, Death"
