@@ -239,7 +239,10 @@ def _create_virus_disease_document(row: dict) -> dict:
             pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
         ]
 
-    if row["disease_id"] not in {"X-TBD", "Y-TBD", "Z-TBD"}:
+    # We have instance so W-TBD through Z-TBD that we wish to exclude as disease id's
+    # from processing
+    exclusion_term = "TBD"
+    if exclusion_term not in row["disease_id"]:
         document = {
             "_id": f"{row['virus_id']}-{row['disease_id']}",
             "subject": {
