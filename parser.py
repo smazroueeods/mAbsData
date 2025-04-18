@@ -222,13 +222,14 @@ def _create_protein_virus_document(row: dict) -> Generator[dict, str, None]:
             yield document
 
 
-def _create_antibody_disease_document(row: dict) -> dict:
+def _create_virus_disease_document(row: dict) -> dict:
     """
     Generates the document detailing the subject-relation-object
-    structure between the antibody and disease
-    """
-    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
+    structure between the virus and disease
 
+    subject -> virus
+    object -> disease
+    """
     disease_name = row["disease_name"]
     discovered_disease_name = _disease_name_lookup(disease_name)
 
@@ -240,11 +241,13 @@ def _create_antibody_disease_document(row: dict) -> dict:
 
     if row["disease_id"] not in {"X-TBD", "Y-TBD", "Z-TBD"}:
         document = {
-            "_id": f"{row['mab_name']}-{row['disease_id']}",
+            "_id": f"{row['virus_id']}-{row['disease_id']}",
             "subject": {
-                "id": row["mab_name"],
-                "cross_reference": cross_reference,
-                "type": "Antibody",
+                "id": row["virus_id"],
+                "name": row["virus_name"],
+                "family": row["Family"],
+                "species": row["Species"],
+                "type": "Virus",
             },
             "relation": {"pubmed": pubmed_collection},
             "object": {
@@ -257,15 +260,66 @@ def _create_antibody_disease_document(row: dict) -> dict:
         return document
 
 
+def _create_antibody_virus_document(row: dict) -> dict:
+    """
+    Generates the document detailing the subject-relation-object
+    structure between the antibody and virus
+
+    cross_reference example values:
+        > Cellosaurus: CVCL_J890
+        > PDB: 2R69
+        > Addgene: 120363
+        > PDB: 2I69 and 1SVB
+
+    epitope example values:
+        > Envelope protein E
+        > Envelope protein E, Fusion loop domain (98-DRXW-101)
+        > Envelope protein E, EDIII domain, This antibody neutralizes dengue virus serotypes 1, 2 and 3.
+
+    subject -> antibody
+    object -> virus
+    """
+    cross_reference = _parse_cross_reference(row.get("Protein_RefID", None))
+
+    pubmed_collection = []
+    if row["pubmed_id"] is not None:
+        pubmed_collection = [
+            pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
+        ]
+
+    document = {
+        "_id": f"{row['mab_name']}-{row['virus_id']}",
+        "subject": {
+            "id": row["mab_name"],
+            "cross_reference": cross_reference,
+            "type": "Antibody",
+        },
+        "relation": {"pubmed": pubmed_collection},
+        "object": {
+            "id": row["virus_id"],
+            "name": row["virus_name"],
+            "type": "Virus",
+            "family": row["Family"],
+            "species": row["Species"],
+        },
+    }
+    document = _filter_document(document, *["", None, {}])
+    return document
+
+
 def load_data(data_folder: str):
     """
     Load data and process JSON structure
     """
     # Create JSON for mAbs/virus/disease
     data_folder = pathlib.Path(data_folder).resolve().absolute()
-    antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies.csv")
+    antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies_OLD.csv")
     for row in _read_csv(str(antibodies_file), delim=","):
         yield from _create_antibody_protein_document(row)
         yield from _create_protein_virus_document(row)
-        antibody_disease_document = _create_antibody_disease_document(row)
-        yield antibody_disease_document
+
+        virus_disease_document = _create_virus_disease_document(row)
+        yield virus_disease_document
+
+        antibody_virus_document = _create_antibody_virus_document(row)
+        yield antibody_virus_document
