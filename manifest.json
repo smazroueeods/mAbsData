@@ -6,7 +6,7 @@
   },
   "dumper": {
     "data_url": [
-      "https://raw.githubusercontent.com/smazroueeods/mAbsData/refs/heads/main/NCATS_MonoClonalAntibodies.csv"
+      "https://raw.githubusercontent.com/smazroueeods/mAbsData/refs/heads/main/NCATS_MonoClonalAntibodies_OLD.csv"
     ],
     "uncompress": false,
     "release": "version:get_release"
