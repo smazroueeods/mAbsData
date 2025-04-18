@@ -79,7 +79,30 @@
 }
 ```
 
-###### Antibody-Disease Relationship
+###### Virus-Disease Relationship
+
+```JSON
+{
+    "_id": "", 
+    "subject": {
+        "id": "", 
+        "name": "", 
+        "family": "", 
+        "species": [], 
+        "type": ""
+    }, 
+    "relation": {
+        "pubmed": []
+    }, 
+    "object": {
+        "id": "", 
+        "name": "", 
+        "type": ""
+    }
+}
+```
+
+###### Antibody-Virus Relationship
 
 ```JSON
 {
@@ -96,6 +119,8 @@
         "id": "",
         "name": "",
         "type": ""
+        "family": "",
+        "species": "",
     }
 }
 ```
@@ -148,21 +173,68 @@
             "type": "Virus"
         }
     },
-    { // antibody-disease
+    { // virus-disease
+        "_id": "11053-DOID:12205", 
         "subject": {
-            "id": "1A1D-2",
-            "cross_reference": {
-                "PDB": ["2R69"]
-            },
-            "type": "Antibody"
-        },
+            "id": "11053", 
+            "name": "DENV1", 
+            "family": "Flavivirus", 
+            "species": ["DENV", "WNV", "ZIKV"], 
+            "type": "Virus"
+        }, 
         "relation": {
-            "pubmed": ["18264114", "9657950"]
-        },
+            "pubmed": [
+                "18264114",
+                "9657950", 
+                "24743696", 
+                "22723463", 
+                "22235356", 
+                "21264311", 
+                "20369024",
+                "18562544", 
+                "27475895", 
+                "35432292", 
+                "16809304", 
+                "32015557", 
+                "27882950", 
+                "25501631",
+                "25581790",
+                "33317184", 
+                "27974667",
+                "27417494", 
+                "10361725", 
+                "22285214", 
+                "22491255",
+                "23851440", 
+                "27707930",
+                "31945137",
+                "24255124",
+                "24421336",
+                "26355030", 
+                "33414220"
+            ]
+        }, 
         "object": {
-            "id": "DOID:12205",
-            "name": "dengue disease",
+            "id": "DOID:12205", 
+            "name": "Dengue Fever", 
             "type": "Disease"
+        }
+    },
+    { // antibody-virus
+        "_id": "DENV1-E113-11053", 
+        "subject": {
+            "id": "DENV1-E113", 
+            "type": "Antibody"
+        }, 
+        "relation": {
+            "pubmed": ["20369024"]
+        }, 
+        "object": {
+            "id": "11053", 
+            "name": "DENV1", 
+            "type": "Virus", 
+            "family": "Flavivirus", 
+            "species": "DENV"
         }
     }
 ]
