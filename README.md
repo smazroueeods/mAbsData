@@ -25,7 +25,6 @@
 | 16     | Quantitative measure |
 | 17     | Unit                 |
 | 18     | disease_id           |
-| 19     | disease_name         |
 
 
 ### Relationship Diagram
@@ -96,7 +95,6 @@
     }, 
     "object": {
         "id": "", 
-        "name": "", 
         "type": ""
     }
 }
@@ -216,7 +214,6 @@
         }, 
         "object": {
             "id": "DOID:12205", 
-            "name": "Dengue Fever", 
             "type": "Disease"
         }
     },
