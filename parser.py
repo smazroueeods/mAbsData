@@ -1,20 +1,26 @@
+"""
+Parser module for handling record processing for the plugin
+
+Record Types:
+
+antibody-protein record
+protein-virus record
+virus-disease record
+antibody-virus record
+"""
+
+
 from typing import Any, Generator
 import collections
 import csv
-import itertools
 import json
 import logging
 import pathlib
 import re
-import urllib
-import urllib.request
 
 
 logger = logging.getLogger("mabs")
 logger.setLevel("DEBUG")
-
-
-disease_lookup_table = {}
 
 
 def _normalize_row(row: dict) -> bool:
@@ -55,13 +61,15 @@ def _filter_document(entry: Any, *forbidden: list) -> Any:
             for inner_entry in entry
             if inner_entry not in forbidden
         ]
-    elif isinstance(entry, dict):
+
+    if isinstance(entry, dict):
         result = {}
         for key, value in entry.items():
             value = _filter_document(value, *forbidden)
             if key not in forbidden and value not in forbidden:
                 result[key] = value
         return result
+
     return entry
 
 
@@ -119,29 +127,6 @@ def _read_csv(file: str, delim: str) -> Generator[dict, str, None]:
             else:  # yield row
                 if _normalize_row(row):
                     yield row
-
-
-def _disease_name_lookup(disease_name: str) -> str:
-    """
-    Perform a lookup on my disease for a corresponding disease name.
-    Regardless of result, we update the result to a lookup table as
-    in-memory cache to avoid unnecessary network calls
-    """
-    discovered_disease_name = disease_lookup_table.get(disease_name, None)
-    if discovered_disease_name is None:
-        try:
-            disease_url_lookup = f"https://mydisease.info/v1/disease/{disease_name}?fields=disgenet.xrefs.disease_name"
-            with urllib.request.urlopen(disease_url_lookup) as http_response:
-                response_content = http_response.read()
-                response_body = json.loads(response_content.decode("utf-8"))
-                discovered_disease_name = response_body["disgenet"]["xrefs"][
-                    "disease_name"
-                ]
-        except urllib.error.HTTPError:
-            discovered_disease_name = None
-        finally:
-            disease_lookup_table[disease_name] = discovered_disease_name
-    return discovered_disease_name
 
 
 def _create_antibody_protein_document(row: dict) -> Generator[dict, str, None]:
@@ -230,17 +215,14 @@ def _create_virus_disease_document(row: dict) -> dict:
     subject -> virus
     object -> disease
     """
-    disease_name = row["disease_name"]
-    discovered_disease_name = _disease_name_lookup(disease_name)
-
     pubmed_collection = []
     if row["pubmed_id"] is not None:
         pubmed_collection = [
             pubmed_id.strip() for pubmed_id in row["pubmed_id"].split(",")
         ]
 
-    # We have instance so W-TBD through Z-TBD that we wish to exclude as disease id's
-    # from processing
+    # We have multiple instances of TBD (W-TBD through Z-TBD)
+    # we wish to exclude these disease id's from processing
     exclusion_term = "TBD"
     if exclusion_term not in row["disease_id"]:
         document = {
@@ -255,12 +237,13 @@ def _create_virus_disease_document(row: dict) -> dict:
             "relation": {"pubmed": pubmed_collection},
             "object": {
                 "id": row["disease_id"],
-                "name": discovered_disease_name,
                 "type": "Disease",
             },
         }
         document = _filter_document(document, *["", None, {}])
         return document
+
+    return {}
 
 
 def _create_antibody_virus_document(row: dict) -> dict:
@@ -277,7 +260,11 @@ def _create_antibody_virus_document(row: dict) -> dict:
     epitope example values:
         > Envelope protein E
         > Envelope protein E, Fusion loop domain (98-DRXW-101)
-        > Envelope protein E, EDIII domain, This antibody neutralizes dengue virus serotypes 1, 2 and 3.
+        > ( *newlines added for readability*
+            Envelope protein E,
+            EDIII domain,
+            This antibody neutralizes dengue virus serotypes 1, 2 and 3.
+          )
 
     subject -> antibody
     object -> virus
@@ -316,13 +303,14 @@ def load_data(data_folder: str):
     """
     # Create JSON for mAbs/virus/disease
     data_folder = pathlib.Path(data_folder).resolve().absolute()
-    antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies_OLD.csv")
-    for row in _read_csv(str(antibodies_file), delim=","):
+    antibodies_file = data_folder.joinpath("NCATS_MonoClonalAntibodies.tsv")
+    for row in _read_csv(str(antibodies_file), delim="\t"):
         yield from _create_antibody_protein_document(row)
         yield from _create_protein_virus_document(row)
 
         virus_disease_document = _create_virus_disease_document(row)
-        yield virus_disease_document
+        if virus_disease_document is not None:
+            yield virus_disease_document
 
         antibody_virus_document = _create_antibody_virus_document(row)
         yield antibody_virus_document
